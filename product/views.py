@@ -86,33 +86,33 @@ class CreateCheckoutSessionView(View):
 
     YOUR_DOMAIN = "http://localhost:8000"
         
-    def success(request):
-        return render(request,"success.html")
+    # def success(request):
+    #     return render(request,"success.html")
     
-    def post(self,request,*args,**kwargs): 
-        checkout_session = stripe.checkout.Session.create(
-            line_items=[
-                {
-                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-                    'price': 'price_1NPkztGvjAuWKVBt95bi330D',
-                    'quantity': 1,
-                },
-            ],
+    # def post(self,request,*args,**kwargs): 
+    #     checkout_session = stripe.checkout.Session.create(
+    #         line_items=[
+    #             {
+    #                 # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+    #                 'price': 'price_1NPkztGvjAuWKVBt95bi330D',
+    #                 'quantity': 1,
+    #             },
+    #         ],
             
-            mode='payment',
-            # mode='subscription',  # mode is of three types : payment , subscription , and setup #! ----------------------------------------------------------------------
+    #         mode='payment',
+    #         # mode='subscription',  # mode is of three types : payment , subscription , and setup #! ----------------------------------------------------------------------
              
-            success_url=CreateCheckoutSessionView.YOUR_DOMAIN ,
-            cancel_url=CreateCheckoutSessionView.YOUR_DOMAIN ,
-        )
-        # if checkout_session.id :
-        #     return render(request,"success.html")
-        # return JsonResponse({
-        #     "id": checkout_session.id,
-        #     "session":checkout_session
-        # },)
-        # response = redirect(checkout_session.url)
-        # response.status_code = 303
-        return redirect(checkout_session.url)
+    #         success_url=CreateCheckoutSessionView.YOUR_DOMAIN ,
+    #         cancel_url=CreateCheckoutSessionView.YOUR_DOMAIN ,
+    #     )
+    #     # if checkout_session.id :
+    #     #     return render(request,"success.html")
+    #     # return JsonResponse({
+    #     #     "id": checkout_session.id,
+    #     #     "session":checkout_session
+    #     # },)
+    #     # response = redirect(checkout_session.url)
+    #     # response.status_code = 303
+    #     return redirect(checkout_session.url)
         
 

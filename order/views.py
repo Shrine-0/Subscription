@@ -34,17 +34,21 @@ def add_order(request):
     
     else:
         #! -- create order
+
         for i in orders:
+            total_amount = sum(i['price'] * i['quantity'] for i in orders)
+            
             products = Product.objects.get(id = i['product'])
         
             order = Order.objects.create(
                 product = products,
                 # name = i['name'],
                 # user = products.user,
-                
+                total_amount = total_amount,
                 user=user, #! --  user authentication------------>
                 
-                total_amount = i['total_amount'],
+                price = i['price']
+                
             )
         serailizer = OrderSerializers(order,many= False)
         return Response(serailizer.data)
@@ -69,6 +73,7 @@ def delete_order(request,pk):
 
 
 stripe.api_key = STRIPE_PRIVATE_KEY
+
 @api_view(["POST"])
 @permission_classes([IsAdminUser]) #! --- authentiaction
 def create_checkout_session(request):
@@ -84,6 +89,11 @@ def create_checkout_session(request):
     }
     checkout_order_items=[]
     for i in orders:
+        unit_amount = i["price"] * 100
+        print(unit_amount)
+        quantity = i["quantity"]
+        print(quantity)
+        # total_amount = unit_amount * quantity
         checkout_order_items.append({
             "price_data":{
                 "currency" : "npr",
@@ -95,9 +105,9 @@ def create_checkout_session(request):
                 "recurring":{
                     "interval":"year"
                 },
-                "unit_amount":i["price"]*100
+                "unit_amount":unit_amount
             },
-            "quantity":i["quantity"]
+            "quantity":quantity
         })
     checkout_session = stripe.checkout.Session.create(
         payment_method_types = ['card'],
@@ -105,13 +115,14 @@ def create_checkout_session(request):
         # total_amount= checkout_session.metadata.product,
         line_items = checkout_order_items,
         customer_email = user.email,
+        # amount_total = total_amount,
         mode = 'subscription',
-        subscription_data = {'trial_period_days':7,},
+        # subscription_data = {'trial_period_days':0,},#! <--------- trail period ----------->
         success_url = YOUR_DOMAIN,
         cancel_url = YOUR_DOMAIN,
         # idempotency_key="keeee"
     )
-    print(checkout_session)
+    # print(checkout_session)
     return Response({"session":checkout_session})
 
 @api_view(["POST"])
@@ -141,18 +152,19 @@ def stripe_webhook(request):
         
         price = session['amount_total']
         
-        
+        # print("data",line_items['data'])
         for item in line_items['data']:
             print(f'item : {item}')
             line_product =stripe.Product.retrieve(item.price.product)
             product_id = line_product.metadata.product_id
-            product = Product.objects.get(id = product_id)
+            product = Product.objects.filter(id = product_id)
             item = Order.objects.create(  
             user = User(session.metadata.user),
             total_amount = price,
             payment_mode = "Card",
             payment_status = "Paid",
             product = product,
+            # price= price,
             )
 
         return Response({'details':'Payment successful'})
