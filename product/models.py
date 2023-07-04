@@ -3,7 +3,7 @@ import inspect
 from django.contrib.auth.models import User
 
 class Category(models.TextChoices):
-    free = "FREE"
+    free = "Free"
     Premium = "Premium"
     
 class Product(models.Model):

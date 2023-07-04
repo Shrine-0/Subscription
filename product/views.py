@@ -12,6 +12,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import templates
 from django.shortcuts import redirect
+from rest_framework.decorators import api_view,permission_classes
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
+
 
 stripe.api_key  = settings.STRIPE_PRIVATE_KEY 
 
@@ -28,6 +31,45 @@ def get_product(request,pk):
     serializer = ProductSerializer(product,many=False)
     return Response({"id":serializer.data})
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated,IsAdminUser])
+def add_product(request):
+    user = request.user
+    data = request.data
+    
+    product = data['product']
+    
+    for i in product:
+        product = Product.objects.create(
+            name = i['name'],
+            description = i['description'],
+            price = i['price'],
+            user = user,
+        )
+    serializer = ProductSerializer(product,many=False)
+    return Response(serializer.data)
+
+@api_view(["PUT"])
+@permission_classes([IsAdminUser])
+def update_price(request,pk):
+    product = get_object_or_404(Product,id = pk)
+    product.price = request.data['price']
+    # product.description = request.data['description']
+    # product.name = request.data['name']
+    product.save()  
+    serializer=ProductSerializer(product,many=False)
+    return Response({f"updated : {pk}":serializer.data})
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated,IsAdminUser])
+def delete_product(request,pk):
+    data =request.data
+    user =request.user
+    # product = Product.objects.get(id=pk)
+    product = get_object_or_404(Product,id=pk)
+    product.delete()
+    return Response({"product-details":{f"product for id  : {pk} deleted successfully"}})
+    
 class ProductLandingPageView(TemplateView):
     template_name = "checkout.html"
     

@@ -12,6 +12,7 @@ import stripe
 from subscription.settings import STRIPE_PRIVATE_KEY, STRIPE_WEBHOOK_SECERET
 from utils.helpers import get_current_host
 from django.contrib.auth.models import User
+
 @api_view(["GET"])
 def get_order(request):
     order = Order.objects.all()
@@ -20,10 +21,10 @@ def get_order(request):
     return Response({"Order":serializer.data})
 
 @api_view(["POST"])
-# @permission_classes([IsAuthenticated,IsAdminUser])
+@permission_classes([IsAuthenticated])
 def add_order(request):
     
-    # user = request.user #! -- User authentication- ------------- --------------->
+    user = request.user #! -- User authentication- ------------- --------------->
     data = request.data
     
     orders = data['order']
@@ -35,12 +36,13 @@ def add_order(request):
         #! -- create order
         for i in orders:
             products = Product.objects.get(id = i['product'])
+        
             order = Order.objects.create(
                 product = products,
-                # name = products.name,
-                user = products.user,
+                # name = i['name'],
+                # user = products.user,
                 
-                # user=user #! --  user authentication------------>
+                user=user, #! --  user authentication------------>
                 
                 total_amount = i['total_amount'],
             )
@@ -48,7 +50,7 @@ def add_order(request):
         return Response(serailizer.data)
     
 @api_view(["PUT"])
-# @permission_classes([IsAdminUser])
+@permission_classes([IsAdminUser])
 def process_order(request,pk):
     # order = Order.objects.get(id = pk)
     order = get_object_or_404(Order,id = pk)
@@ -58,7 +60,7 @@ def process_order(request,pk):
     return Response({"order":serializer.data})
 
 @api_view(["DELETE"])
-# @permission_classes([IsAdminUser])
+@permission_classes([IsAdminUser])
 def delete_order(request,pk):
     # order = Order.objects.get(id = pk)
     order = get_object_or_404(Order,id = pk)
@@ -78,7 +80,7 @@ def create_checkout_session(request):
     orders = data["order"]
     
     user_details ={
-        "user":user.id
+        "user":user.id,
     }
     checkout_order_items=[]
     for i in orders:
@@ -100,6 +102,7 @@ def create_checkout_session(request):
     checkout_session = stripe.checkout.Session.create(
         payment_method_types = ['card'],
         metadata = user_details,
+        # total_amount= checkout_session.metadata.product,
         line_items = checkout_order_items,
         customer_email = user.email,
         mode = 'subscription',
@@ -108,9 +111,11 @@ def create_checkout_session(request):
         cancel_url = YOUR_DOMAIN,
         # idempotency_key="keeee"
     )
+    print(checkout_session)
     return Response({"session":checkout_session})
 
 @api_view(["POST"])
+# @permission_classes([IsAdminUser])
 def stripe_webhook(request):
     
     webhook_secret = "whsec_599dbf3f66bece9e8b11c8c2c8bc3927fa67d82a15bf76a8fc1b85b70652aff0"
