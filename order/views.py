@@ -147,6 +147,7 @@ def stripe_webhook(request):
             total_amount = price,
             payment_mode = "Card",
             payment_status = "Paid",
+            product = product,
             )
 
         return Response({'details':'Payment successful'})
