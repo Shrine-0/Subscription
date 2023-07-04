@@ -157,7 +157,7 @@ def stripe_webhook(request):
             print(f'item : {item}')
             line_product =stripe.Product.retrieve(item.price.product)
             product_id = line_product.metadata.product_id
-            product = Product.objects.filter(id = product_id)
+            product = Product.objects.get(id = product_id)
             item = Order.objects.create(  
             user = User(session.metadata.user),
             total_amount = price,
