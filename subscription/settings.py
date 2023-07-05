@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
     '192.168.1.83',
     'localhost',    
     '192.168.1.75',
+    '127.0.0.1',
 ]
 
 
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'product.apps.ProductConfig',
     'rest_framework',
     'order.apps.OrderConfig',
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -59,8 +61,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
-
+INTERNAL_IPS=[
+    # ...
+    '127.0.0.1',
+    # ...
+]
 ROOT_URLCONF = 'subscription.urls'
 
 TEMPLATES = [

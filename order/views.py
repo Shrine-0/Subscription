@@ -100,7 +100,7 @@ def create_checkout_session(request):
                 "product_data" : {
                     "name":i["name"],
                     # "images": 
-                    "metadata":{"product_id":i["product"]}
+                    "metadata":{"product_id":i["product"],"user_id":user_details["user"]}
                 },
                 "recurring":{
                     "interval":"year"
@@ -127,11 +127,12 @@ def create_checkout_session(request):
 
 @api_view(["POST"])
 # @permission_classes([IsAdminUser])
-def stripe_webhook(request):
-    
+def stripe_webhook(request):  
     webhook_secret = "whsec_599dbf3f66bece9e8b11c8c2c8bc3927fa67d82a15bf76a8fc1b85b70652aff0"
     payload = request.body
+    print(Response(payload))
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    # print("sig_header",sig_header)
     event = None
     
     try:
@@ -154,22 +155,27 @@ def stripe_webhook(request):
         
         # print("data",line_items['data'])
         for item in line_items['data']:
-
-            print(f'item : {item}')
+            # description=item['description']
+            # print(description)
+            # print(f'item : {item}')
             try:
                 line_product =stripe.Product.retrieve(item.price.product)
                 product_id = line_product.metadata.product_id
                 product = Product.objects.get(id = product_id)
                 
-            except Exception as e:
+            except Product.DoesNotExist:
+                print("error at line 160")
                 return Response({"error":"error at line 160","Error":str(e)},status=status.HTTP_400_BAD_REQUEST)
             
             try:
-                user = User.objects.get(id=line_product.metadata.session.user)
+                user_id = session["metadata"]["user"]
                 
             except Exception as e :
-                return Response({"error":"error in line 167","Error":str(e)},status=status.HTTP_400_BAD_REQUEST)
-                            
+                print(e)
+                return Response({"error":"error in line 167","Error":str(e)},status=status.HTTP_404_NOT_FOUND)
+            # user = session["metadata"]["user"]
+            # # user = User.objects.get(id=line_product.metadata.session.user)
+            # print({"user":user})                
             # try:
             #     invoice_item = stripe.InvoiceItem.create(
             #         indempotency_key = "this_is_a_key",
@@ -192,23 +198,29 @@ def stripe_webhook(request):
                 )
                 
             except Exception as e :
-                return Response({"error":"creating Object model in line 162","ERROR":str(e)},status=status.HTTP_400_BAD_REQUEST)
-            
-            # try:
-            #     invoice  = stripe.Invoice.create(
-            #         customer = user.id,
-            #         collection
-            #     )
+                print("creating Object model in line 190")
+                return Response({"error":"creating Object model in line 190","ERROR":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            try:
+                invoice  = stripe.Invoice.create(
+                    customer = session["customer"],
+                    # customer = "cus_OCqqQnotYIbvpB",
+                    collection_method="charge_automatically",
+                    # description=description,
+                )
                 
-            # except Exception as e :
-            #     return Response({"error":"error in line 198","Error":str(e)},status =status.HTTP_400_BAD_REQUEST)
+            except Exception as e :
+                print("error in line 203")
+                # print(item_cpy)
+                return Response({"error":"error in line 198","Error":str(e)},status =status.HTTP_400_BAD_REQUEST)
             
-            # try:
-            #     final_invoice = stripe.Invoice.finalize_invoice(invoice.id)
+            try:
+                # print({"invoice":invoice})
+                final_invoice = stripe.Invoice.finalize_invoice(invoice.id)
             #     stripe.Invoice.send_invoice(final_invoice.id)
                 
-            # except Exception as e :
-            #     return Response({"error":"error in line 205","Error":str(e)},status = status.HTTP_400_BAD_REQUEST)
+            except Exception as e :
+                print("error in line 213")
+                return Response({"error":"error in line 213","Error":str(e)},status = status.HTTP_400_BAD_REQUEST)
             
         return Response({'details':'Payment successful'})
     else:
