@@ -154,20 +154,63 @@ def stripe_webhook(request):
         
         # print("data",line_items['data'])
         for item in line_items['data']:
-            print(f'item : {item}')
-            line_product =stripe.Product.retrieve(item.price.product)
-            product_id = line_product.metadata.product_id
-            product = Product.objects.get(id = product_id)
-            item = Order.objects.create(  
-            user = User(session.metadata.user),
-            total_amount = price,
-            payment_mode = "Card",
-            payment_status = "Paid",
-            product = product,
-            # price= price,
-            )
 
+            print(f'item : {item}')
+            try:
+                line_product =stripe.Product.retrieve(item.price.product)
+                product_id = line_product.metadata.product_id
+                product = Product.objects.get(id = product_id)
+                
+            except Exception as e:
+                return Response({"error":"error at line 160","Error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                user = User.objects.get(id=line_product.metadata.session.user)
+                
+            except Exception as e :
+                return Response({"error":"error in line 167","Error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+                            
+            # try:
+            #     invoice_item = stripe.InvoiceItem.create(
+            #         indempotency_key = "this_is_a_key",
+            #         customer = user.id,
+            #         amount = item['amount'],
+            #         currency = "npr",
+            #         description= product.name
+            #     )
+                
+            # except Exception as e:
+            #     return Response({"error":"error at line 173","Error":str(e)}) 
+            
+            try:
+                item = Order.objects.create(  
+                user = User(session.metadata.user),
+                total_amount = price,
+                payment_mode = "Card",
+                payment_status = "Paid",
+                product = product,
+                )
+                
+            except Exception as e :
+                return Response({"error":"creating Object model in line 162","ERROR":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            
+            # try:
+            #     invoice  = stripe.Invoice.create(
+            #         customer = user.id,
+            #         collection
+            #     )
+                
+            # except Exception as e :
+            #     return Response({"error":"error in line 198","Error":str(e)},status =status.HTTP_400_BAD_REQUEST)
+            
+            # try:
+            #     final_invoice = stripe.Invoice.finalize_invoice(invoice.id)
+            #     stripe.Invoice.send_invoice(final_invoice.id)
+                
+            # except Exception as e :
+            #     return Response({"error":"error in line 205","Error":str(e)},status = status.HTTP_400_BAD_REQUEST)
+            
         return Response({'details':'Payment successful'})
     else:
-        return Response({"error": f"Unhandled event type: {event['type']}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": f"Unhandled event type: {event['type']}"},status=status.HTTP_400_BAD_REQUEST)
 
