@@ -52,13 +52,13 @@ def add_product(request):
 
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated,IsAdminUser])
-def update_price(request,pk):
+def update_product(request,pk):
     product = get_object_or_404(Product,id = pk)
     if product.user != request.user:
-        return Response({"Details":"Permission-Denied current user { } not allowed to perform the actions requested"},status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"Details":f"Permission-Denied current user {request.user.email} not allowed to perform the actions requested"},status=status.HTTP_401_UNAUTHORIZED)
     product.price = request.data['price']
-    # product.description = request.data['description']
-    # product.name = request.data['name']
+    product.description = request.data['description']
+    product.name = request.data['name']
     product.save()  
     serializer=ProductSerializer(product,many=False)
     return Response({f"updated : {pk}":serializer.data})
@@ -71,7 +71,7 @@ def delete_product(request,pk):
     # product = Product.objects.get(id=pk)
     product = get_object_or_404(Product,id=pk)
     if product.user != request.user:
-        return Response({"Details":"Permission-Denied current user { } not allowed to perform the actions requested"},status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"Details":f"Permission-Denied current user {request.user.email} not allowed to perform the actions requested"},status=status.HTTP_401_UNAUTHORIZED)
 
     product.delete()
     return Response({"product-details":{f"product for id  : {pk} deleted successfully"}})
