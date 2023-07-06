@@ -6,6 +6,8 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.views import View
 from django.views.generic import TemplateView
+
+from .filters import ProductFilter
 from .models import Product
 from .serializers import ProductSerializer
 from rest_framework.decorators import api_view
@@ -21,8 +23,9 @@ stripe.api_key  = settings.STRIPE_PRIVATE_KEY
 
 @api_view(['GET'])
 def get_products(request):
-    product = Product.objects.all()
-    serializer = ProductSerializer(product,many = True)
+    filterset = ProductFilter(request.GET,queryset=Product.objects.all().order_by('id'))
+    # product = Product.objects.all()
+    serializer = ProductSerializer(filterset.qs,many = True)
     return Response({"Products": serializer.data,})
     
 @api_view(['GET'])
