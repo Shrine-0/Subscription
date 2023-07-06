@@ -14,6 +14,7 @@ import templates
 from django.shortcuts import redirect
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
+from rest_framework import status
 
 
 stripe.api_key  = settings.STRIPE_PRIVATE_KEY 
@@ -50,9 +51,11 @@ def add_product(request):
     return Response(serializer.data)
 
 @api_view(["PUT"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAuthenticated,IsAdminUser])
 def update_price(request,pk):
     product = get_object_or_404(Product,id = pk)
+    if product.user != request.user:
+        return Response({"Details":"Permission-Denied current user { } not allowed to perform the actions requested"},status=status.HTTP_401_UNAUTHORIZED)
     product.price = request.data['price']
     # product.description = request.data['description']
     # product.name = request.data['name']
@@ -67,6 +70,9 @@ def delete_product(request,pk):
     user =request.user
     # product = Product.objects.get(id=pk)
     product = get_object_or_404(Product,id=pk)
+    if product.user != request.user:
+        return Response({"Details":"Permission-Denied current user { } not allowed to perform the actions requested"},status=status.HTTP_401_UNAUTHORIZED)
+
     product.delete()
     return Response({"product-details":{f"product for id  : {pk} deleted successfully"}})
     
